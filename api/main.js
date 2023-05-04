@@ -11,7 +11,7 @@ const SERVIDOR_PORTA = 3300;
 // configure a linha abaixo caso queira que os dados capturados sejam inseridos no banco de dados.
 // false -> nao insere
 // true -> insere
-const HABILITAR_OPERACAO_INSERIR = true;
+const HABILITAR_OPERACAO_INSERIR = false;
 
 // altere o valor da variável AMBIENTE para o valor desejado:
 // API conectada ao banco de dados remoto, SQL Server -> 'producao'
@@ -33,8 +33,8 @@ const serial = async (
                 // altere!
                 // CREDENCIAIS DO BANCO LOCAL - MYSQL WORKBENCH
                 host: 'localhost',
-                user: 'insert_temperatura_processos',
-                password: 'tempProcessos',
+                user: 'USUARIO_DO_BANCO_LOCAL',
+                password: 'SENHA_DO_BANCO_LOCAL',
                 database: 'DATABASE_LOCAL'
             }
         ).promise();
@@ -62,8 +62,17 @@ const serial = async (
     arduino.pipe(new serialport.ReadlineParser({ delimiter: '\r\n' })).on('data', async (data) => {
         //console.log(data);
         const valores = data.split(';');
+        const dht11Umidade = parseFloat(valores[0]);
+        const dht11Temperatura = parseFloat(valores[1]);
         const lm35Temperatura = parseFloat(valores[2]);
+        const luminosidade = parseFloat(valores[3]);
         const chave = parseInt(valores[4]);
+
+        valoresDht11Umidade.push(dht11Umidade);
+        valoresDht11Temperatura.push(dht11Temperatura);
+        valoresLuminosidade.push(luminosidade);
+        valoresLm35Temperatura.push(lm35Temperatura);
+        valoresChave.push(chave);
 
         if (HABILITAR_OPERACAO_INSERIR) {
             if (AMBIENTE == 'producao') {
@@ -74,7 +83,7 @@ const serial = async (
                 // >> Importante! você deve ter o aquario de id 1 cadastrado.
                 sqlquery = `INSERT INTO medida (dht11_umidade, dht11_temperatura, luminosidade, lm35_temperatura, chave, momento, fk_aquario) VALUES (${dht11Umidade}, ${dht11Temperatura}, ${luminosidade}, ${lm35Temperatura}, ${chave}, CURRENT_TIMESTAMP, 1)`;
 
-                // CREDENCIAIS DO BANCO REMOTO - SQL SERVERy
+                // CREDENCIAIS DO BANCO REMOTO - SQL SERVER
                 // Importante! você deve ter criado o usuário abaixo com os comandos presentes no arquivo
                 // "script-criacao-usuario-sqlserver.sql", presente neste diretório.
                 const connStr = "Server=servidor-acquatec.database.windows.net;Database=bd-acquatec;User Id=usuarioParaAPIArduino_datawriter;Password=#Gf_senhaParaAPI;";
@@ -96,8 +105,8 @@ const serial = async (
                 // Este insert irá inserir dados de fk_aquario id=1 (fixo no comando do insert abaixo)
                 // >> você deve ter o aquario de id 1 cadastrado.
                 await poolBancoDados.execute(
-                    'INSERT INTO medida (lm35_temperatura) VALUES (?, ?, ?, ?, ?, now(), 1)',
-                    [lm35Temperatura]
+                    'INSERT INTO medida (dht11_umidade, dht11_temperatura, luminosidade, lm35_temperatura, chave, momento, fk_aquario) VALUES (?, ?, ?, ?, ?, now(), 1)',
+                    [dht11Umidade, dht11Temperatura, luminosidade, lm35Temperatura, chave]
                 );
                 console.log("valores inseridos no banco: ", dht11Umidade + ", " + dht11Temperatura + ", " + luminosidade + ", " + lm35Temperatura + ", " + chave)
 
@@ -110,3 +119,37 @@ const serial = async (
         console.error(`Erro no arduino (Mensagem: ${mensagem}`)
     });
 }
+
+
+// não altere!
+const servidor = (
+    valoresLm35Temperatura,
+    valoresChave
+) => {
+    const app = express();
+    app.use((request, response, next) => {
+        response.header('Access-Control-Allow-Origin', '*');
+        response.header('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
+        next();
+    });
+}
+
+(async () => {
+    const valoresDht11Umidade = [];
+    const valoresDht11Temperatura = [];
+    const valoresLuminosidade = [];
+    const valoresLm35Temperatura = [];
+    const valoresChave = [];
+    await serial(
+        valoresDht11Umidade,
+        valoresDht11Temperatura,
+        valoresLuminosidade,
+        valoresLm35Temperatura,
+        valoresChave
+    );
+    servidor(
+
+        valoresLm35Temperatura,
+        valoresChave
+    );
+})();
