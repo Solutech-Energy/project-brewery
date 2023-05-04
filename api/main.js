@@ -11,7 +11,7 @@ const SERVIDOR_PORTA = 3300;
 // configure a linha abaixo caso queira que os dados capturados sejam inseridos no banco de dados.
 // false -> nao insere
 // true -> insere
-const HABILITAR_OPERACAO_INSERIR = false;
+const HABILITAR_OPERACAO_INSERIR = true;
 
 // altere o valor da variável AMBIENTE para o valor desejado:
 // API conectada ao banco de dados remoto, SQL Server -> 'producao'
@@ -33,9 +33,9 @@ const serial = async (
                 // altere!
                 // CREDENCIAIS DO BANCO LOCAL - MYSQL WORKBENCH
                 host: 'localhost',
-                user: 'USUARIO_DO_BANCO_LOCAL',
-                password: 'SENHA_DO_BANCO_LOCAL',
-                database: 'DATABASE_LOCAL'
+                user: 'root',
+                password: 'Deus2004@',
+                database: 'cervejaria'
             }
         ).promise();
     } else if (AMBIENTE == 'producao') {
@@ -82,41 +82,41 @@ const serial = async (
                 // Este insert irá inserir dados de fk_aquario id=1 (fixo no comando do insert abaixo)
                 // >> Importante! você deve ter o aquario de id 1 cadastrado.
                 sqlquery = `INSERT INTO medida (dht11_umidade, dht11_temperatura, luminosidade, lm35_temperatura, chave, momento, fk_aquario) VALUES (${dht11Umidade}, ${dht11Temperatura}, ${luminosidade}, ${lm35Temperatura}, ${chave}, CURRENT_TIMESTAMP, 1)`;
-
+                
                 // CREDENCIAIS DO BANCO REMOTO - SQL SERVER
                 // Importante! você deve ter criado o usuário abaixo com os comandos presentes no arquivo
                 // "script-criacao-usuario-sqlserver.sql", presente neste diretório.
                 const connStr = "Server=servidor-acquatec.database.windows.net;Database=bd-acquatec;User Id=usuarioParaAPIArduino_datawriter;Password=#Gf_senhaParaAPI;";
-
+                
                 function inserirComando(conn, sqlquery) {
                     conn.query(sqlquery);
                     console.log("valores inseridos no banco: ", dht11Umidade + ", " + dht11Temperatura + ", " + luminosidade + ", " + lm35Temperatura + ", " + chave)
                 }
-
+                
                 sql.connect(connStr)
-                    .then(conn => inserirComando(conn, sqlquery))
-                    .catch(err => console.log("erro! " + err));
-
+                .then(conn => inserirComando(conn, sqlquery))
+                .catch(err => console.log("erro! " + err));
+                
             } else if (AMBIENTE == 'desenvolvimento') {
-
+                
+                // console.log("Entrou no else");
                 // altere!
                 // Este insert irá inserir os dados na tabela "medida"
                 // -> altere nome da tabela e colunas se necessário
                 // Este insert irá inserir dados de fk_aquario id=1 (fixo no comando do insert abaixo)
                 // >> você deve ter o aquario de id 1 cadastrado.
                 await poolBancoDados.execute(
-                    'INSERT INTO medida (dht11_umidade, dht11_temperatura, luminosidade, lm35_temperatura, chave, momento, fk_aquario) VALUES (?, ?, ?, ?, ?, now(), 1)',
-                    [dht11Umidade, dht11Temperatura, luminosidade, lm35Temperatura, chave]
+                    'INSERT INTO tb_captacao (idCaptacao, TempCaptada, DataHora, fkProcessos) VALUES (null, ?, now(), 1), (null, ?, now(), 2), (null, ?, now(), 3), (null, ?, now(), 4), (null, ?, now(), 5), (null, ?, now(), 6), (null, ?, now(), 7), (null, ?, now(), 8), (null, ?, now(), 9), (null, ?, now(), 10), (null, ?, now(), 11), (null, ?, now(), 12), (null, ?, now(), 13), (null, ?, now(), 14), (null, ?, now(), 15)',
+                    [lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura,lm35Temperatura]
                 );
-                console.log("valores inseridos no banco: ", dht11Umidade + ", " + dht11Temperatura + ", " + luminosidade + ", " + lm35Temperatura + ", " + chave)
-
+                
             } else {
                 throw new Error('Ambiente não configurado. Verifique o arquivo "main.js" e tente novamente.');
             }
         }
     });
     arduino.on('error', (mensagem) => {
-        console.error(`Erro no arduino (Mensagem: ${mensagem}`)
+        // console.error(`Erro no arduino (Mensagem: ${mensagem}`)
     });
 }
 
