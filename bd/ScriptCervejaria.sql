@@ -12,13 +12,11 @@ TempMax decimal
 
 create table tb_captacao (
 idCaptacao int primary key auto_increment,
-TempCaptada decimal,
+TempCaptada decimal(10,1),
 DataHora datetime,
 fkProcessos int,
 constraint nomesProcessos foreign key (fkProcessos) references tb_Processos (idProcessos)
 );
-
-
 
 
 insert into tb_processos values 
@@ -37,6 +35,15 @@ insert into tb_processos values
 (null,"Maturação", 0, 2),
 (null,"Pasteurização", 60, 70),
 (null,"Produto Final", 2, 7);
+
+
+insert into tb_captacao values
+(null, 22.5, now(), 1),
+(null, 20.2, now(), 2),
+(null, 21.3, now(), 3),
+(null, 25.9, now(), 4);
+
+desc tb_captacao;
 
 select * from tb_captacao;
 select * from tb_processos;
